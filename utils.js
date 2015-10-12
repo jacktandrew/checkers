@@ -16,13 +16,11 @@ window.u = window.utils = {
 			val = obj[key];
 			func(val, key);
 		}
-		return obj;
 	},
 	combine: function(arr1, arr2) {
 		var arr = arr1.map(function(item, i) {
 			return [item, arr2[i]];
 		});
-		return arr;
 	},
 	compare: function(arr1, arr2) {
 		var boole = true;
@@ -32,7 +30,10 @@ window.u = window.utils = {
 		return boole;
 	},
 	clone: function(obj) {
-		return u.extend({}, obj);
+		if (obj instanceof Array)
+			return u.extend([], obj);
+		else
+			return u.extend({}, obj);
 	},
 	filter: function(obj, func) {
 		var winners = [];

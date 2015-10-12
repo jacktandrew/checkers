@@ -6,8 +6,8 @@ Game.prototype = {
   constructor: Game,
   counter: 0,
   players: [
-    { color: 'red', direction: 1 },
-    { color: 'black', direction: -1 }
+    { color: 'red', direction: [1] },
+    { color: 'black', direction: [-1] }
   ],
   jumps: [],
   init: function(length) {
@@ -17,6 +17,7 @@ Game.prototype = {
     this.board.length = length;
     this.boardEl = window.render.init(this.board, this);
     document.body.appendChild(this.boardEl);
+    window.render.styleIt(length);
     this.active = u.clone(this.players[this.counter]);
   },
   handleEvent: function(event) {
@@ -25,7 +26,7 @@ Game.prototype = {
       if (el.classList.contains('killzone'))
         game.checkKill(el);
       else if (this.active.man && !this.jumps.length)
-        game.check(el);
+        game.checkMove(el);
     } else {
       game.toggle(el);
     }
@@ -48,11 +49,11 @@ Game.prototype = {
   move: function(landing) {
     game.active.name = landing.name;
     landing.el.appendChild(this.active.manEl);
+    landing.el.classList.remove('killzone');
   },
   kill: function(deadSq) {
     var deadman = deadSq.el.children[0];
     deadSq.el.removeChild(deadman);
-    deadSq.el.classList.remove('killzone');
     deadSq.man = undefined;
     game.jumping = true;
   },
@@ -76,9 +77,9 @@ Game.prototype = {
     this.moves = game.getMoves(sqObj, 1);
     el.classList.add('active');
   },
-  check: function(el) {
+  checkMove: function(el) {
     var sqObj = this.getSq(el),
-      forward = this.checkForward(this.active.sqObj, sqObj),
+      forward = this.checkDirection(this.active.sqObj, sqObj),
       validMoves = this.moves.filter(function(move) {
         if (move) return u.compare(move.coords, sqObj.coords);
       });
@@ -87,10 +88,12 @@ Game.prototype = {
       this.finish(sqObj);
     }
   },
-  checkForward: function(sq1, sq2) {
-    if (!sq1 || !sq2) return false;
-    var diff = sq2.coords[1] - sq1.coords[1];
-    if (diff === this.active.direction) return true;
+  checkDirection: function(sq1, sq2) {
+    var directions, dir;
+    if (!sq1 || !sq1.man || !sq2) return false;
+    directions = sq1.man.direction;
+    dir = sq2.coords[1] - sq1.coords[1];
+    if (directions.indexOf(dir) + 1) return true;
   },
   finish: function(sqObj) {
     this.counter = 1 - this.counter;
@@ -103,63 +106,70 @@ Game.prototype = {
     this.active.sqObj.man = undefined;
     //  Switch the active team
     this.active = u.clone(this.players[this.counter]);
-    //  Remove all the killzone indicators
-    u.duplex(game.jumps, function(sq) {
-      sq.el.classList.remove('killzone');
-    });
     this.jumping = false;
+
+    u.duplex(this.jumps, function(step, i) {
+      step.el.classList.remove('killzone');
+    });
+
     this.getJumps();
   },
-  getJumps: function(direction) {
-    var myTeam = u.filter(game.board, function(sq) {
-      return game.checkColor(sq, game.active.color);
-    });
-    this.jumps = [];
-    u.each(myTeam, function(sq) { game.checkAllJumps([sq]) });
-    this.jumps = this.findLongests();
-    u.duplex(this.jumps, function(step, i) {
-      if (i && i % 2 === 0) step.el.classList.add('killzone');
-    });
-  },
-  checkAllJumps: function(path) {
-    var last = path[path.length - 1],
-      neighbors = game.getMoves(last, 1),
-      landings = game.getMoves(last, 2);
+  getJumps: function() {
+    var team = u.filter(game.board, function(sq) {
+        return game.checkColor(sq, game.active.color);
+      }),
+      paths = [], jumps, longest;
 
-    u.twin(neighbors, landings, function(neighbor, landing) {
-      var result = game.checkOneJump(neighbor, landing, path);
-      if (result && result.length > 1) game.jumps.push(result);
+    u.each(team, function(start) {
+      var c1s = game.getMoves(start, 1),
+        c2s = game.getMoves(start, 2);
+
+      u.twin(c1s, c2s, function(c1, c2) {
+        if (c1 && c2) {
+          paths.push([start, c1, c2]);
+          team.push(c2);
+        }
+      });
     });
+
+    jumps = paths.filter(this.filterJumps);
+    longest = this.findLongests(jumps);
+    this.highlightJumps(longest);
+    this.jumps = longest;
   },
-  checkOneJump: function(neighbor, landing, path) {
+  filterJumps: function(path) {
     var enemyColor = game.players[1 - game.counter].color,
-      isForward = game.checkForward(neighbor, landing),
-      isEnemy = game.checkColor(neighbor, enemyColor),
-      isEmpty = landing && landing.man === undefined;
+      isForward = game.checkDirection(path[0], path[1]),
+      isEnemy = game.checkColor(path[1], enemyColor),
+      isEmpty = path[2] && path[2].man === undefined;
 
-    if (isEnemy && isEmpty && isForward) {
-      path.push(neighbor, landing);
-      game.checkAllJumps(path);
-    } else {
-      return path;
-    }
+    if (isEnemy && isEmpty && isForward) return true;
   },
-  findLongests: function() {
+  findLongests: function(jumps) {
     var longests = [[]];
-    game.jumps.forEach(function(path) {
-      if (path.length === longests[0].length)
-        longests.push(path);
+
+    jumps.forEach(function(path) {
       if (path.length > longests[0].length)
         longests = [path];
+      else if (path.length === longests[0].length)
+        longests.push(path);
     });
-    if (longests[0].length === 0) return [];
-    else return longests;
+
+    if (longests[0].length === 0)
+      return [];
+    else
+      return longests;
+  },
+  highlightJumps: function(path) {
+    u.duplex(path, function(step, i) {
+      if (i && i % 2 === 0) step.el.classList.add('killzone');
+    });
   },
   getMoves: function(sqObj, factor) {
     var moves = [[-1,1], [1,1], [1,-1], [-1,-1]],
       results = moves.map(function(shifts) {
         var coord = shifts.map(function(shift, i) {
-          return shift * factor + sqObj.coords[i];
+          if (sqObj.coords) return shift * factor + sqObj.coords[i];
         });
         return game.getSq(coord);
       });
@@ -171,15 +181,16 @@ Game.prototype = {
   getSq: function(input) {
     var name;
     if (input instanceof HTMLElement) name = input.dataset.name;
-    if (input instanceof Array) name = input[0] + ':' + input[1]
+    if (input instanceof Array) name = input[0] + ':' + input[1];
     return this.board[name];
   },
   checkKing: function(sqObj) {
     var row = sqObj.coords[1],
-      last = game.board.length - 1;
-    console.log(sqObj.coords[1]);
+      last = game.board.length - 1,
+      otherDir;
     if (row === 0 || row === last) {
-      this.active.man.king = true;
+      otherDir = sqObj.man.direction * -1;
+      this.active.man.direction.push(otherDir);
       this.active.manEl.classList.add('king');
     }
   }

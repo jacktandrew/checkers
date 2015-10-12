@@ -24,12 +24,12 @@ window.render = {
 
     return boardEl
   },
-  // styleIt: function(length) {
-  //   var boardEl = document.querySelector('.board'),
-  //     square = boardEl.querySelector('.square'),
-  //     style = getComputedStyle(square),
-  //     width = parseInt(style.width),
-  //     boardWidth = width * length + 1;
-  //   boardEl.style.width = boardWidth + 'px';
-  // },
+  styleIt: function(length) {
+    var boardEl = document.querySelector('.board'),
+      square = boardEl.querySelector('.square'),
+      style = getComputedStyle(square),
+      width = parseInt(style.width),
+      boardWidth = width * length + 1;
+    boardEl.style.width = boardWidth + 'px';
+  },
 };
