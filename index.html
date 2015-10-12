@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.square {
+  width: 5rem;
+  height: 5rem;
+  display: inline-block;
+  position: relative;
+}
+
+.square.killzone {
+  background-color: yellowgreen;
+}
+
+.black { background-color: gray; }
+.man {
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  margin: 0.75rem;
+  border-width: 4px;
+  border-style: solid;
+}
+.red {
+  background-color: red;
+  border-color: red;
+}
+.man.black {
+  background-color: black;
+  border-color: black;
+}
+.man.active { border-color: yellowgreen; }
+
+  </style>
+</head>
+<body>
+
+</body>
+<script src="utils.js"></script>
+<script src="render.js"></script>
+<script src="board.js"></script>
+<script src="men.js"></script>
+<script src="move.js"></script>
+<script src="game.js"></script>
+</html>
