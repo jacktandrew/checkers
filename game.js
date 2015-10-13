@@ -91,25 +91,27 @@ Game.prototype = {
   checkDirection: function(sq1, sq2) {
     var directions, dir;
     if (!sq1 || !sq1.man || !sq2) return false;
-    directions = sq1.man.direction;
+    directions = sq1.man.directions;
     dir = this.getDirection(sq1, sq2);
     if (directions.indexOf(dir) + 1) return true;
   },
   finish: function(sqObj) {
     this.counter = 1 - this.counter;
-    this.checkKing(sqObj);
     //  Deactivate man
     this.active.manEl.classList.remove('active');
     //  Add man to target square
     u.extend(sqObj, { man: this.active.man });
     //  Remove man from vacated square
     this.active.sqObj.man = undefined;
+    //  Make the man a king if he reached the end
+    this.checkKing(sqObj);
     //  Switch the active team
     this.active = u.clone(this.players[this.counter]);
     this.jumping = false;
 
     u.duplex(this.jumps, function(step, i) {
-      step.el.classList.remove('killzone');
+      if (step.el)
+        step.el.classList.remove('killzone');
     });
 
     this.getJumps();
@@ -119,12 +121,13 @@ Game.prototype = {
         return game.checkColor(sq, game.active.color);
       }),
       jumps, longest;
-    this.paths = [];
+    this.jumps = [];
     u.each(team, this.getJumpSquares);
-    jumps = this.paths.filter(this.filterJumps);
+    jumps = this.jumps.filter(this.filterJumps);
     longest = this.findLongests(jumps);
     this.highlightJumps(longest);
     this.jumps = longest;
+    console.log(this.jumps);
   },
   findLongests: function(jumps) {
     var longests = [[]];
@@ -164,16 +167,18 @@ Game.prototype = {
     if (input instanceof HTMLElement) name = input.dataset.name;
     if (input instanceof Array) name = input[0] + ':' + input[1];
     return this.board[name];
-  },
-  checkKing: function(sqObj) {
-    var row = sqObj.coords[1],
-      last = game.board.length - 1,
-      otherDir;
-    if (row === 0 || row === last) {
-      otherDir = sqObj.man.direction * -1;
-      this.active.man.direction.push(otherDir);
-      this.active.manEl.classList.add('king');
-    }
+  }
+};
+
+Game.prototype.checkKing = function(sqObj) {
+  var row = sqObj.coords[1],
+    last = game.board.length - 1,
+    otherDir = sqObj.man.directions * -1,
+    manEl = sqObj.el.children[0];
+
+  if (row === 0 || row === last) {
+    sqObj.man.directions.push(otherDir);
+    manEl.classList.add('king');
   }
 };
 
@@ -182,11 +187,25 @@ Game.prototype.filterJumps = function(path) {
     penult = path[path.length - 2],
     enemyColor = game.players[1 - game.counter].color,
     moveDir = game.getDirection(penult, last),
+    validDirections = path[0].man.directions,
     isEnemy = game.checkColor(penult, enemyColor),
     isEmpty = last && last.man === undefined,
-    isForward = game.active.direction[0] === moveDir;
+    isInValidDir = validDirections.indexOf(moveDir) + 1;
 
-  if (isEnemy && isEmpty && isForward) return true;
+  if (isEnemy && isEmpty && isInValidDir) return true;
+};
+
+Game.prototype.checkForDups = function(path) {
+  var names = path.map(function(step) {
+      if (step) return step.name;
+    }),
+    dups = names.filter(function(name) {
+      var index = names.indexOf(name),
+        last = names.lastIndexOf(name);
+      if (index !== last && name != undefined) return true;
+    });
+
+    if (!dups.length) return true;
 };
 
 Game.prototype.getDirection = function(sq1, sq2) {
@@ -195,14 +214,17 @@ Game.prototype.getDirection = function(sq1, sq2) {
 };
 
 Game.prototype.getJumpSquares = function(path) {
-  var sq0 = path[path.length - 1],
-    sq1s = game.getMoves(sq0, 1),
-    sq2s = game.getMoves(sq0, 2);
+  var sq0, sq1s, sq2s;
+  if (path instanceof Array === false) path = [path];
+  sq0 = path[path.length - 1];
+  sq1s = game.getMoves(sq0, 1);
+  sq2s = game.getMoves(sq0, 2);
   u.twin(sq1s, sq2s, function(sq1, sq2) {
     var possible = path.concat([sq1, sq2]),
-      boole = game.filterJumps(possible);
+      valid = game.filterJumps(possible),
+      unique = game.checkForDups(possible);
 
-    if (boole) {
+    if (valid && unique) {
       game.getJumpSquares(possible);
       game.paths.push(possible);
     }

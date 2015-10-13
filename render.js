@@ -16,7 +16,7 @@ window.render = {
       squareEl.dataset.name = name;
 
       if (square.man) {
-        manEl.className = 'man ' + square.man.color;
+        manEl.className = 'man king ' + square.man.color;
         squareEl.appendChild(manEl);
       }
       boardEl.appendChild(squareEl);
