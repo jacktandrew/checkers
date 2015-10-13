@@ -24,9 +24,8 @@ Board.prototype = {
   },
   directMan: function(men, n) {
     var man = men[n].shift();
-    // if (!n) n = -1;
-    // man.directions = [n];
-    man.directions = [-1,1];
+    if (!n) n = -1;
+    man.directions = [n];
     return man;
   },
   buildBoard: function(length) {

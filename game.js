@@ -36,13 +36,17 @@ Game.prototype = {
       end = el.dataset.name;
 
     this.jumps.forEach(function(path) {
+      var gameOver;
       if (start === path[0].name && end === path[2].name) {
         //  Remove starting point
         game.kill(path[1]);
         game.move(path[2]);
         path.shift();
         path.shift();
-        if (path.length === 1) game.finish(path[0]);
+        if (path.length === 1) {
+          gameOver = game.checkForVictory();
+          if (!gameOver) game.finish(path[0]);
+        }
       }
     });
   },
@@ -127,7 +131,6 @@ Game.prototype = {
     longest = this.findLongests(jumps);
     this.highlightJumps(longest);
     this.jumps = longest;
-    console.log(this.jumps);
   },
   findLongests: function(jumps) {
     var longests = [[]];
@@ -226,8 +229,23 @@ Game.prototype.getJumpSquares = function(path) {
 
     if (valid && unique) {
       game.getJumpSquares(possible);
-      game.paths.push(possible);
+      game.jumps.push(possible);
     }
   });
-}
+};
+
+Game.prototype.checkForVictory = function() {
+  var teams = [];
+  u.each(this.board, function(sq) {
+    var color, index;
+    if (sq.man) {
+      color = sq.man.color;
+      index = teams.indexOf(color) + 1;
+      if (!index) teams.push(color);
+    }
+  });
+  if (teams.length === 1)
+    alert("Congratulation "+teams[0]+" team, you've won!");
+  return true;
+};
 var game = new Game(8);
