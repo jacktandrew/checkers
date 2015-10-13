@@ -92,7 +92,7 @@ Game.prototype = {
     var directions, dir;
     if (!sq1 || !sq1.man || !sq2) return false;
     directions = sq1.man.direction;
-    dir = sq2.coords[1] - sq1.coords[1];
+    dir = this.getDirection(sq1, sq2);
     if (directions.indexOf(dir) + 1) return true;
   },
   finish: function(sqObj) {
@@ -118,32 +118,13 @@ Game.prototype = {
     var team = u.filter(game.board, function(sq) {
         return game.checkColor(sq, game.active.color);
       }),
-      paths = [], jumps, longest;
-
-    u.each(team, function(start) {
-      var c1s = game.getMoves(start, 1),
-        c2s = game.getMoves(start, 2);
-
-      u.twin(c1s, c2s, function(c1, c2) {
-        if (c1 && c2) {
-          paths.push([start, c1, c2]);
-          team.push(c2);
-        }
-      });
-    });
-
-    jumps = paths.filter(this.filterJumps);
+      jumps, longest;
+    this.paths = [];
+    u.each(team, this.getJumpSquares);
+    jumps = this.paths.filter(this.filterJumps);
     longest = this.findLongests(jumps);
     this.highlightJumps(longest);
     this.jumps = longest;
-  },
-  filterJumps: function(path) {
-    var enemyColor = game.players[1 - game.counter].color,
-      isForward = game.checkDirection(path[0], path[1]),
-      isEnemy = game.checkColor(path[1], enemyColor),
-      isEmpty = path[2] && path[2].man === undefined;
-
-    if (isEnemy && isEmpty && isForward) return true;
   },
   findLongests: function(jumps) {
     var longests = [[]];
@@ -173,7 +154,7 @@ Game.prototype = {
         });
         return game.getSq(coord);
       });
-    return results;
+    if (results.length) return results;
   },
   checkColor: function(sq, color) {
     if (sq && sq.man && sq.man.color === color) return true;
@@ -195,4 +176,36 @@ Game.prototype = {
     }
   }
 };
+
+Game.prototype.filterJumps = function(path) {
+  var last = path[path.length - 1],
+    penult = path[path.length - 2],
+    enemyColor = game.players[1 - game.counter].color,
+    moveDir = game.getDirection(penult, last),
+    isEnemy = game.checkColor(penult, enemyColor),
+    isEmpty = last && last.man === undefined,
+    isForward = game.active.direction[0] === moveDir;
+
+  if (isEnemy && isEmpty && isForward) return true;
+};
+
+Game.prototype.getDirection = function(sq1, sq2) {
+  if (!sq1 || !sq2) return false;
+  return sq2.coords[1] - sq1.coords[1];
+};
+
+Game.prototype.getJumpSquares = function(path) {
+  var sq0 = path[path.length - 1],
+    sq1s = game.getMoves(sq0, 1),
+    sq2s = game.getMoves(sq0, 2);
+  u.twin(sq1s, sq2s, function(sq1, sq2) {
+    var possible = path.concat([sq1, sq2]),
+      boole = game.filterJumps(possible);
+
+    if (boole) {
+      game.getJumpSquares(possible);
+      game.paths.push(possible);
+    }
+  });
+}
 var game = new Game(8);
