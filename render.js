@@ -1,35 +1,40 @@
-window.render = {
-	init: function(board, self) {
-		return this.render(board, self);
-	},
-  render: function(board, self) {
-    var boardEl = document.createElement('section');
-    boardEl.className = 'board';
+(function(){
+  var checkers = window.checkers = window.checkers || {};
 
-    u.each(board, function(square, name) {
-      var squareEl = document.createElement('div'),
-        manEl = document.createElement('figure');
+  checkers.render = {
+  	init: function(board, self) {
+  		return this.render(board, self);
+  	},
+    render: function(board, self) {
+      var boardEl = document.createElement('section');
+      boardEl.className = 'board';
 
-      square.el = squareEl;
-      squareEl.className = 'square ' + square.color;
-      squareEl.addEventListener('click', self, false);
-      squareEl.dataset.name = name;
+      u.each(board, function(square, name) {
+        var squareEl = document.createElement('div'),
+          manEl = document.createElement('figure');
 
-      if (square.man) {
-        manEl.className = 'man ' + square.man.color;
-        squareEl.appendChild(manEl);
-      }
-      boardEl.appendChild(squareEl);
-    }.bind(this));
+        square.el = squareEl;
+        squareEl.className = 'square ' + square.color;
+        squareEl.addEventListener('click', self, false);
+        squareEl.dataset.name = name;
 
-    return boardEl
-  },
-  styleIt: function(length) {
-    var boardEl = document.querySelector('.board'),
-      square = boardEl.querySelector('.square'),
-      style = getComputedStyle(square),
-      width = parseInt(style.width),
-      boardWidth = width * length + 1;
-    boardEl.style.width = boardWidth + 'px';
-  },
-};
+        if (square.man) {
+          manEl.className = 'man ' + square.man.color;
+          squareEl.appendChild(manEl);
+        }
+        boardEl.appendChild(squareEl);
+      }.bind(this));
+
+      return boardEl
+    },
+    styleIt: function(length) {
+      var boardEl = document.querySelector('.board'),
+        square = boardEl.querySelector('.square'),
+        style = getComputedStyle(square),
+        width = parseInt(style.width),
+        boardWidth = width * length + 1;
+      boardEl.style.width = boardWidth + 'px';
+    },
+  };
+
+})();
