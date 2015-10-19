@@ -7,7 +7,7 @@
 
   Game.prototype = {
     constructor: Game,
-    counter: 0,
+    counter: 1,
     players: [
       { color: 'red', direction: [1] },
       { color: 'black', direction: [-1] }
