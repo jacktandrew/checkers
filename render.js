@@ -3,9 +3,6 @@
 
   checkers.render = {
   	init: function(board, self) {
-  		return this.render(board, self);
-  	},
-    render: function(board, self) {
       var boardEl = document.createElement('section');
       boardEl.className = 'board';
 
