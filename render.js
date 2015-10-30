@@ -22,7 +22,7 @@
         boardEl.appendChild(squareEl);
       }.bind(this));
 
-      return boardEl
+      return boardEl;
     },
     styleIt: function(length) {
       var boardEl = document.querySelector('.board'),

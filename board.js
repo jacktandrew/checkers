@@ -20,8 +20,8 @@
         var row = square.coords[1];
         inNeutralZone = neutralZone.indexOf(row) + 1;
         if (square.color === 'black' && !inNeutralZone) {
-          if (row < half) square.man = this.directMan(men, 1)
-          if (row > half) square.man = this.directMan(men, 0)
+          if (row < half) square.man = this.directMan(men, 1);
+          if (row > half) square.man = this.directMan(men, 0);
         }
       }.bind(this));
     },
